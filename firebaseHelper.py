@@ -2,6 +2,12 @@ import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
 
+def initialize_firebase():
+    if not firebase_admin._apps:
+        cred = credentials.Certificate('touristbot-e8c3c-firebase-adminsdk-it19y-5cd6115996.json')
+        firebase_admin.initialize_app(cred)
+
+initialize_firebase()
 def getCollection(collection):
     if not firebase_admin._apps:
         cred = credentials.Certificate('touristbot-e8c3c-firebase-adminsdk-it19y-5cd6115996.json')
