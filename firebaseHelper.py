@@ -18,3 +18,11 @@ def getCollectionByID(collection, ID):
     db = firestore.client()
     query = db.collection(collection).where('id', '==', ID).get()
     return query
+
+def getCollectionByAttribute(collection, attribute, value):
+    if not firebase_admin._apps:
+        cred = credentials.Certificate('touristbot-e8c3c-firebase-adminsdk-it19y-5cd6115996.json')
+        firebase_admin.initialize_app(cred)
+    db = firestore.client()
+    query = db.collection(collection).where(attribute, '==', value).get()
+    return query

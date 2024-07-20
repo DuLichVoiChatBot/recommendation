@@ -5,7 +5,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
 import os
 import uvicorn
-from firebaseHelper import getCollection, getCollectionByID
+from firebaseHelper import getCollection, getCollectionByID, getCollectionByAttribute
+from datetime import datetime, timezone
 
 app = FastAPI()
 
@@ -53,13 +54,13 @@ async def read_item(cost_id: int, location_id: int, space_id: int):
                 )
     return results
 
-@app.get("/chat/")
-async def getAllChat():
-    docs = getCollection('chats')
-    results = []
-    for doc in docs:
-        results.append(doc.to_dict())
-    return results
+# @app.get("/chat/")
+# async def getAllChat():
+#     docs = getCollection('chats')
+#     results = []
+#     for doc in docs:
+#         results.append(doc.to_dict())
+#     return results
 
 @app.get("/user/{user_id}")
 async def getUserByID(user_id: str):
@@ -72,9 +73,25 @@ async def getUserByID(user_id: str):
         results.append(user)
     return results
 
+@app.get("/chat/{user_id}")
+async def getCoversationByID(user_id: str):
+    docs = getCollectionByAttribute('chats', 'conversationId', user_id)
+    results = []
+    for doc in docs:
+        temp = doc.to_dict()
+        results.append(temp)
+    def convert_to_datetime(dt):
+        return datetime(
+            dt.year, dt.month, dt.day,
+            dt.hour, dt.minute, dt.second,
+            dt.microsecond, tzinfo=dt.tzinfo
+        )
+    results = sorted(results, key=lambda x: convert_to_datetime(x['createdAt']))
+    return results
+
 if __name__ == "__main__":
     uvicorn.run(
-        app,  # Truyền đối tượng FastAPI
+        app,
         host="0.0.0.0",
         port=8000
     )
