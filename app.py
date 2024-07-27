@@ -1,7 +1,9 @@
 from fastapi import FastAPI
 import uvicorn
-from services.item_service import train
-from services.item_service import recommend_items as service_recommend_items, getUserByID as service_getUserByID, start_listening as service_start_listening, stop_listening as service_stop_listening
+from model.url import Url
+from services.location_rcm_service import recommend
+from services.url_service import create_short_link
+from services.item_service import recommend_items as service_recommend_items, getUserByID as service_getUserByID, start_listening as service_start_listening, stop_listening as service_stop_listening, train
 from dotenv import load_dotenv
 import os 
 
@@ -37,6 +39,14 @@ async def start_listening(user_id: str):
 @app.get("/stop-listening/{user_id}")
 async def stop_listening(user_id: str):
     return service_stop_listening(user_id)
+
+@app.post("/url/")
+async def create_short_link1(long_url: Url):
+    return create_short_link(long_url)
+
+@app.get("/recommend/{user_id}")
+async def rcm(user_id):
+    return recommend(user_id)
 
 if __name__ == "__main__":
     uvicorn.run(

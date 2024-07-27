@@ -6,8 +6,8 @@ import uuid
 import time
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
-from model.location import Location
 from helper.firebaseHelper import getCollection, getCollectionByID, get_firestore_client
+from services.location_rcm_service import recommend_items
 from dotenv import load_dotenv
 import os
 
@@ -37,46 +37,6 @@ def get_data_recommendation():
     X = np.array(tags)
     return X, data
 
-def create_dict_item(location):
-    return {
-        'ID': location.ID,
-        'Name': location.Name,
-        'Address': location.Address,
-        'Category': location.Category,
-        'Description': location.Description,
-        'Giá': location.Price,
-        'Loại': location.Type,
-        'URL': location.Url,
-        'tags': location.Tags
-    }
-
-def recommend_items(cost_id: int, location_id: int, space_id: int):
-    kmeans = joblib.load('./data/model.pkl')
-    elements, data = get_data_recommendation()
-    test = [cost_id, location_id, space_id]
-    result = kmeans.predict([test])[0]
-    predictx = kmeans.predict(elements)
-
-    results = []
-    for index, value in enumerate(predictx):
-        if result == value:
-            if (elements[index][1] == 1 and test[1] == 2) or (elements[index][1] == 2 and test[1] == 1):
-                continue
-            location = Location(
-                str(data[index]['ID']),
-                str(data[index]['Name']),
-                str(data[index]['Address']),
-                str(data[index]['Category']),
-                str(data[index]['Description']),
-                str(data[index]['Giá']),
-                str(data[index]['Loại']),
-                str(data[index]['URL']),
-                str(data[index]['tags'])
-            )
-            results.append(create_dict_item(location))
-
-    return results
-
 def getUserByID(user_id: str):
     docs = getCollectionByID('users', user_id)
     results = []
@@ -96,6 +56,12 @@ def create_callback(user_id):
         on_snapshot(doc_snapshot, changes, read_time, user_id)
     return callback
 
+def getdataggmap(tourist_name):
+    url = os.getenv('SEARCH_MAP') + tourist_name
+    response = requests.request("GET", url)
+
+    return response.json()
+
 def on_snapshot(doc_snapshot, changes, read_time, user_id):
     results = [doc.to_dict() for doc in doc_snapshot]
     results = sorted(results, key=lambda x: x['createdAt'])
@@ -106,6 +72,8 @@ def on_snapshot(doc_snapshot, changes, read_time, user_id):
             response = requests.post(url, json=messages)
             content = response.json()
             collection_chat_ref = db.collection('chats')
+            map_urls = content['map_urls']
+            
             chat_obj = {
                 '_id': str(uuid.uuid4()),
                 'conversationId': user_id,
@@ -114,16 +82,39 @@ def on_snapshot(doc_snapshot, changes, read_time, user_id):
                 'text': content['content'],
                 'user': {
                     '_id': 'chatbot',
-                    'avatar': 'https://res.cloudinary.com/dijcunmcx/image/upload/v1721467645/logo.png',
+                    'avatar': os.getenv('BOT_AVATAR'),
                     'name': 'TouristBot'
                 }
             }
             collection_chat_ref.add(chat_obj)
+
+            # for i in map_urls:
+            #     if i['tourist_name']:
+            #         tourist_name = i['tourist_name']
+            #         location_infors = getdataggmap(tourist_name)
+            #         for location_infor in location_infors:
+            #             chat_obj = {
+            #                 '_id': str(uuid.uuid4()),
+            #                 'conversationId': user_id,
+            #                 'createdAt': time.time() * 1000,
+            #                 'role': content['role'],
+            #                 'text': location_infor['name'],
+            #                 'user': {
+            #                     '_id': 'chatbot',
+            #                     'avatar': os.getenv('BOT_AVATAR'),
+            #                     'name': 'TouristBot'
+            #                 },
+            #                 'address': location_infor['address'],
+            #                 'location': location_infor['location']
+            #             }
+            #             collection_chat_ref.add(chat_obj)
+
             return response
     return {'status': 'Fail'}
 
 def listen_for_changes(user_id):
     if start_chat:
+        print("Having messages!")
         doc_ref = db.collection('chats').where('conversationId', '==', user_id)
         doc_ref.on_snapshot(create_callback(user_id))
 
