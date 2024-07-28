@@ -1,4 +1,5 @@
-from app.helper.firebaseHelper import getCollection
+import os
+from helper.firebaseHelper import getCollection
 
 docs = getCollection('chats')
 for doc in docs:

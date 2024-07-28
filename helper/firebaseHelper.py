@@ -1,10 +1,12 @@
 import firebase_admin
 from firebase_admin import credentials, firestore
 import os
+from dotenv import load_dotenv
 
+load_dotenv()
 def initialize_firebase():
     if not firebase_admin._apps:
-        cred = credentials.Certificate('./core/touristbot-e8c3c-firebase-adminsdk-it19y-5cd6115996.json')
+        cred = credentials.Certificate(str(os.getenv('KEY_FIREBASE')))
         firebase_admin.initialize_app(cred)
 initialize_firebase()
 

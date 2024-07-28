@@ -27,14 +27,11 @@ def recommend(user_id):
         fill_rates = {}
         for index, value in enumerate(ids):
             X_map[value] = X[index]
-            fill_rates[value] = -1
-        # ==================TU========================
         for i in posts.stream():
             temp = i.to_dict()
             post_id = temp['locationId']
             rate = temp['rating']
             fill_rates[post_id] = rate #fill fill_rates[post_id] = rate
-        # =====================================================
         y_train = []
         X_train = []
         for i in fill_rates.items():
